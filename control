@@ -1,0 +1,9 @@
+Package: com.joshdoctors.spinsettings
+Name: SpinSettings
+Depends: mobilesubstrate
+Version: 0.0.1
+Architecture: iphoneos-arm
+Description: Dynamically rotating settings icon
+Maintainer: Josh Doctors
+Author: Josh Doctors
+Section: Tweaks
