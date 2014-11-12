@@ -1,6 +1,8 @@
 #import <QuartzCore/QuartzCore.h>
+#import <Foundation/Foundation.h>
 
-#define kBundlePath @"/Library/PreferenceBundles/SpinSettings.bundle"
+#define kBundlePath @"/Library/PreferenceBundles/SpinSettingsSettings.bundle"
+#define SYS_VER_GREAT_OR_EQUAL(v) ([[[UIDevice currentDevice] systemVersion] compare:v options:64] != NSOrderedAscending)
 
 static NSString * SSSpeed = @"";
 static BOOL enableTweak = NO;
@@ -119,7 +121,7 @@ static BOOL enableTweak = NO;
 
 -(void)dealloc
 {
-	NSLog(@"SpinSettings deallocation");
+	NSLog(@"SpinSettings deallocated");
 	self.isSpinning = 0;
 	self.hasAdjusted = 0;
 	[self.dcImage release];
@@ -136,7 +138,13 @@ static BOOL enableTweak = NO;
 		[self.dcImage setHidden:1];
 
 	if (self.hasAdjusted)
+	{
+		if(SYS_VER_GREAT_OR_EQUAL(@"8.0"))
+		{
+			[self.dcImage.layer removeAllAnimations];
+		}
 		[self rotateImageView];
+	}
 }
 
 -(void)_activeDisplayChanged:(id)_activeDisplayChanged
@@ -149,7 +157,13 @@ static BOOL enableTweak = NO;
 		[self.dcImage setHidden:1];
 
 	if (self.hasAdjusted)
+	{
+		if(SYS_VER_GREAT_OR_EQUAL(@"8.0"))
+		{
+			[self.dcImage.layer removeAllAnimations];
+		}
 		[self rotateImageView];
+	}
 }
 
 %new - (void)rotateImageView
@@ -168,6 +182,7 @@ static BOOL enableTweak = NO;
 		completion:^(BOOL finished){
 			if (finished)
 			{
+				[self.dcImage.layer removeAllAnimations];
 				[self rotateImageView];
 			}
 		}];
@@ -200,7 +215,7 @@ static BOOL enableTweak = NO;
 -(Class)iconClass
 {
 	Class orig = %orig;
-	NSString * identifier = MSHookIvar<NSString*>(self,"_displayIdentifier");
+	NSString * identifier = MSHookIvar<NSString*>(self,"_bundleIdentifier");
 
 	if([identifier isEqualToString:@"com.apple.Preferences"]){
 		return %c(SBSettingsApplicationIcon);
@@ -221,29 +236,85 @@ static BOOL enableTweak = NO;
 
 	if ([[icon leafIdentifier] isEqualToString:@"com.apple.Preferences"])
 	{
+		NSLog(@"_setIcon for Preferences");
 		SBSettingsIconImageView * img = MSHookIvar<SBSettingsIconImageView*>(self,"_iconImageView");
-		[img setDynamicFrame:[img frame]];
-		[img rotateImageView];
+
+		if([img isKindOfClass:%c(SBSettingsIconImageView)])
+		{
+			NSLog(@"Our image ivar is of the correct class.");
+			[img setDynamicFrame:[img frame]];
+			if(SYS_VER_GREAT_OR_EQUAL(@"8.0"))
+		 	{
+		 		[img.layer removeAllAnimations];
+		 	}
+			[img rotateImageView];
+		}	
 	}
 }
 
 %end
 
+
+// "Hey, why do you have different code for iOS7 and iOS8 preferences?"
+// "Because I knew what worked for iOS7 and I knew what worked for iOS8. I needed to push out an update to fix a conflict with 'Spin'
+// and thus couldn't test in time the code to see if the changes for iOS8 would also work for iOS7. Will be sorted out in the next update"
 static void loadPrefs() 
 {
-    NSMutableDictionary *prefs = [[NSMutableDictionary alloc] initWithContentsOfFile:@"/var/mobile/Library/Preferences/com.joshdoctors.spinsettings.plist"];
-
-    if (prefs)
+    if(SYS_VER_GREAT_OR_EQUAL(@"8.0"))
     {
-        enableTweak = ([prefs objectForKey:@"enableTweak"] ? [[prefs objectForKey:@"enableTweak"] boolValue] : enableTweak);
-        SSSpeed = ( [prefs objectForKey:@"SSSpeed"] ? [prefs objectForKey:@"SSSpeed"] : SSSpeed );
-        [SSSpeed retain];
+    	NSLog(@"Loading SpinSettings prefs for iOS8");
+	    CFPreferencesAppSynchronize(CFSTR("com.joshdoctors.spinsettings"));
+
+	    enableTweak = !CFPreferencesCopyAppValue(CFSTR("enableTweak"), CFSTR("com.joshdoctors.spinsettings")) ? NO : [(id)CFPreferencesCopyAppValue(CFSTR("enableTweak"), CFSTR("com.joshdoctors.spinsettings")) boolValue];
+	    if (enableTweak) {
+	        NSLog(@"[SpinSettings] We are enabled");
+	    } else {
+	        NSLog(@"[SpinSettings] We are NOT enabled");
+	    }
+
+	    SSSpeed = (NSString*)CFPreferencesCopyAppValue(CFSTR("SSSpeed"), CFSTR("com.joshdoctors.spinsettings")) ?: @"1.0";
+	    [SSSpeed retain];
+	    NSLog(@"SSSpeed: %@",SSSpeed);
     }
-    [prefs release];
+    else
+    {
+    	NSLog(@"Loading SpinSettings prefs for iOS7");
+	    NSMutableDictionary *prefs = [[NSMutableDictionary alloc] initWithContentsOfFile:@"/var/mobile/Library/Preferences/com.joshdoctors.spinsettings.plist"];
+
+	    if (prefs)
+	    {
+	        enableTweak = ([prefs objectForKey:@"enableTweak"] ? [[prefs objectForKey:@"enableTweak"] boolValue] : enableTweak);
+
+	        if (enableTweak) {
+	        	NSLog(@"[SpinSettings] We are enabled");
+		    } else {
+		        NSLog(@"[SpinSettings] We are NOT enabled");
+		    }
+
+	        SSSpeed = ( [prefs objectForKey:@"SSSpeed"] ? [prefs objectForKey:@"SSSpeed"] : SSSpeed );
+	        [SSSpeed retain];
+	    }
+	    [prefs release];
+    }
 }
 
 %ctor
 {
-    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, (CFNotificationCallback)loadPrefs, CFSTR("com.joshdoctors.spinsettings/settingschanged"), NULL, CFNotificationSuspensionBehaviorCoalesce);
-    loadPrefs();
+	if(SYS_VER_GREAT_OR_EQUAL(@"8.0"))
+	{
+		NSLog(@"Loading SpinSettings for iOS8");
+		CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(),
+                                    NULL,
+                                    (CFNotificationCallback)loadPrefs,
+                                    CFSTR("com.joshdoctors.spinsettings/settingschanged"),
+                                    NULL,
+                                    CFNotificationSuspensionBehaviorDeliverImmediately);
+    	loadPrefs();
+	}
+	else
+	{
+		NSLog(@"Loading SpinSettings for iOS7");
+		CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, (CFNotificationCallback)loadPrefs, CFSTR("com.joshdoctors.spinsettings/settingschanged"), NULL, CFNotificationSuspensionBehaviorCoalesce);
+	    loadPrefs();
+	}
 }

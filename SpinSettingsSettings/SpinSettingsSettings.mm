@@ -1,17 +1,17 @@
 #import <Preferences/Preferences.h>
 #import <UIKit/UIKit.h>
 
-@interface SpinSettingsListController: PSListController {
+@interface SpinSettingsSettingsListController: PSListController {
 }
 @end
 
 @interface ViewController : UIViewController <UIImagePickerControllerDelegate,UINavigationControllerDelegate>
 @end
 
-@implementation SpinSettingsListController
+@implementation SpinSettingsSettingsListController
 - (id)specifiers {
 	if(_specifiers == nil) {
-		_specifiers = [[self loadSpecifiersFromPlistName:@"SpinSettings" target:self] retain];
+		_specifiers = [[self loadSpecifiersFromPlistName:@"SpinSettingsSettings" target:self] retain];
 	}
 	return _specifiers;
 

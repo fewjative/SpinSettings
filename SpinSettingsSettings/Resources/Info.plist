@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>English</string>
 	<key>CFBundleExecutable</key>
-	<string>SpinSettings</string>
+	<string>SpinSettingsSettings</string>
 	<key>CFBundleIdentifier</key>
 	<string>com.joshdoctors.spinsettings</string>
 	<key>CFBundleInfoDictionaryVersion</key>
@@ -23,6 +23,6 @@
 	<key>MinimumOSVersion</key>
 	<string>3.0</string>
 	<key>NSPrincipalClass</key>
-	<string>SpinSettingsListController</string>
+	<string>SpinSettingsSettingsListController</string>
 </dict>
 </plist>

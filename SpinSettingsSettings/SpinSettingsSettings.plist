@@ -1,0 +1,10 @@
+{
+    entry = {
+	bundle = SpinSettingsSettings;
+	cell = PSLinkCell;
+	detail = SpinSettingsSettingsListController;
+	icon = SpinSettingsSettings.png;
+	isController = 1;
+	label = SpinSettings;
+    };
+}
