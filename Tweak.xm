@@ -87,7 +87,7 @@ static BOOL enableTweak = NO;
 	NSLog(@"Resetting the frame: %@", NSStringFromCGRect(frameVar));
 	if (self.dcImage && !self.hasAdjusted)
 	{
-		CGRect imageRect = CGRectMake(-1,-1,frameVar.size.width,frameVar.size.height);
+		CGRect imageRect = CGRectMake(frameVar.origin.x,frameVar.origin.y,frameVar.size.width,frameVar.size.height);
 		[self.dcImage setFrame:imageRect];
 		self.hasAdjusted = 1;
 	}
@@ -109,7 +109,7 @@ static BOOL enableTweak = NO;
 		NSString *imagePath = [bundle pathForResource:@"Core" ofType:@"png"];
 		UIImage *image = [UIImage imageWithContentsOfFile:imagePath];
 		self.dcImage = [[UIImageView alloc] initWithImage: image];
-		CGRect iconRect = CGRectMake(-1,-1,0,0);
+		CGRect iconRect = CGRectMake(0,0,0,0);
 		[self.dcImage setFrame:iconRect];
 		self.dcImage.clipsToBounds = YES;
 		self.isSpinning = 1;
@@ -242,7 +242,7 @@ static BOOL enableTweak = NO;
 		if([img isKindOfClass:%c(SBSettingsIconImageView)])
 		{
 			NSLog(@"Our image ivar is of the correct class.");
-			[img setDynamicFrame:[img frame]];
+			[img setDynamicFrame:[img bounds]];
 			if(SYS_VER_GREAT_OR_EQUAL(@"8.0"))
 		 	{
 		 		[img.layer removeAllAnimations];
