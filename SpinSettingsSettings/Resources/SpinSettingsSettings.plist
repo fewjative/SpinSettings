@@ -16,7 +16,7 @@
 			<key>cell</key>
 			<string>PSSwitchCell</string>
 			<key>default</key>
-			<false/>
+			<integer>15</integer>>
 			<key>defaults</key>
 			<string>com.joshdoctors.spinsettings</string>
 			<key>key</key>
@@ -30,7 +30,7 @@
 			<key>footerAlignment</key>
 			<integer>1</integer>
 			<key>footerText</key>
-			<string>*Default is 1.0</string>
+			<string>*Default is 15</string>
 		</dict>
         <dict>
             <key>cell</key>             <string>PSEditTextCell</string>
