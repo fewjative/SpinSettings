@@ -170,6 +170,21 @@ static BOOL enableTweak = NO;
 
 %new - (void)rotateImageView
 {
+	if (self.isSpinning)
+	{
+		CGFloat duration = [self isNumeric:SSSpeed] ? [SSSpeed floatValue] : 15;
+	   [UIView animateWithDuration:duration delay:0.0f options:UIViewAnimationOptionCurveLinear
+            animations:^{
+                self.dcImage.transform = CGAffineTransformRotate(self.dcImage.transform, M_PI / 2);
+            }
+            completion: ^(BOOL finished) {
+                if (finished) {
+                	[self.dcImage.layer removeAllAnimations];
+                	[self rotateImageView];
+                }
+            }];
+	}
+/*
 	if ((long)self.isSpinning && [self.dcImage.layer animationForKey:@"rotationAnimation"] == nil)
 	{
 		CGFloat duration = [self isNumeric:SSSpeed] ? [SSSpeed floatValue] : 15;
@@ -181,6 +196,7 @@ static BOOL enableTweak = NO;
 	    rotationAnimation.repeatCount = INFINITY;
 	    [self.dcImage.layer addAnimation:rotationAnimation forKey:@"rotationAnimation"];
 	}
+*/
 }
 %end
 
