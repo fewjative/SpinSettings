@@ -16,7 +16,7 @@
 			<key>cell</key>
 			<string>PSSwitchCell</string>
 			<key>default</key>
-			<integer>15</integer>>
+			<integer>15</integer>
 			<key>defaults</key>
 			<string>com.joshdoctors.spinsettings</string>
 			<key>key</key>
