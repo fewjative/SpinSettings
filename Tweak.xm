@@ -1,5 +1,7 @@
 #import <QuartzCore/QuartzCore.h>
 #import <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
+#import <substrate.h>
 
 #define kBundlePath @"/Library/PreferenceBundles/SpinSettingsSettings.bundle"
 #define SYS_VER_GREAT_OR_EQUAL(v) ([[[UIDevice currentDevice] systemVersion] compare:v options:64] != NSOrderedAscending)
@@ -168,26 +170,33 @@ static BOOL enableTweak = NO;
 
 %new - (void)rotateImageView
 {
-	if ((long)self.isSpinning)
+	if (self.isSpinning)
 	{
-		[UIView beginAnimations:nil context:NULL];
-		[UIView animateWithDuration:10.0f delay:0 options:UIViewAnimationOptionCurveEaseOut animations:^{
-			if ([self isNumeric:SSSpeed])
-			{
-				[self.dcImage setTransform:CGAffineTransformRotate(self.dcImage.transform,M_PI/((1.0/[SSSpeed doubleValue])*20))];
-			}
-			else
-				[self.dcImage setTransform:CGAffineTransformRotate(self.dcImage.transform,M_PI/20)];
-		}
-		completion:^(BOOL finished){
-			if (finished)
-			{
-				[self.dcImage.layer removeAllAnimations];
-				[self rotateImageView];
-			}
-		}];
-		[UIView commitAnimations];
+		CGFloat duration = [self isNumeric:SSSpeed] ? [SSSpeed floatValue] : 15;
+	   [UIView animateWithDuration:duration delay:0.0f options:UIViewAnimationOptionCurveLinear
+            animations:^{
+                self.dcImage.transform = CGAffineTransformRotate(self.dcImage.transform, M_PI / 2);
+            }
+            completion: ^(BOOL finished) {
+                if (finished) {
+                	[self.dcImage.layer removeAllAnimations];
+                	[self rotateImageView];
+                }
+            }];
 	}
+/*
+	if ((long)self.isSpinning && [self.dcImage.layer animationForKey:@"rotationAnimation"] == nil)
+	{
+		CGFloat duration = [self isNumeric:SSSpeed] ? [SSSpeed floatValue] : 15;
+		//int rotations = 1;
+		CABasicAnimation* rotationAnimation = [CABasicAnimation animationWithKeyPath:@"transform.rotation.z"];
+	    rotationAnimation.toValue = [NSNumber numberWithFloat: M_PI * 2.0];
+	    rotationAnimation.duration = duration;
+	    rotationAnimation.cumulative = YES;
+	    rotationAnimation.repeatCount = INFINITY;
+	    [self.dcImage.layer addAnimation:rotationAnimation forKey:@"rotationAnimation"];
+	}
+*/
 }
 %end
 
