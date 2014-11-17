@@ -6,14 +6,13 @@
 #define kBundlePath @"/Library/PreferenceBundles/SpinSettingsSettings.bundle"
 #define SYS_VER_GREAT_OR_EQUAL(v) ([[[UIDevice currentDevice] systemVersion] compare:v options:64] != NSOrderedAscending)
 
-static NSString * SSSpeed = @"";
+static NSString * SSSpeed = @"2.0";
 static BOOL enableTweak = NO;
 
 @interface UIImage ()
 @property (assign,nonatomic) CGRect mediaImageSubRect;
 -(CGRect)mediaImageSubRect;
 @end
-
 
 @interface SBIcon : NSObject
 -(id)leafIdentifier;
@@ -50,6 +49,12 @@ static BOOL enableTweak = NO;
 -(void)setDynamicFrame:(CGRect)frame;
 -(void)setHasAdjusted:(BOOL)value;
 -(bool)hasAdjusted;
+@end
+
+//potentially need to check if device is unlocked
+@interface SBLockScreenManager : NSObject
++(id)sharedInstance;
+-(BOOL)isUILocked;
 @end
 
 %subclass SBSettingsIconImageView : SBLiveIconImageView
@@ -100,6 +105,7 @@ static BOOL enableTweak = NO;
 	return [[NSScanner scannerWithString:checkText] scanFloat:NULL];
 }
 
+
 -(id)initWithFrame:(CGRect)frame
 {
 	id orig = %orig;
@@ -143,25 +149,7 @@ static BOOL enableTweak = NO;
 	{
 		if(SYS_VER_GREAT_OR_EQUAL(@"8.0"))
 		{
-			[self.dcImage.layer removeAllAnimations];
-		}
-		[self rotateImageView];
-	}
-}
-
--(void)_activeDisplayChanged:(id)_activeDisplayChanged
-{
-	%orig;
-
-	if (enableTweak)
-		[self.dcImage setHidden:0];
-	else
-		[self.dcImage setHidden:1];
-
-	if (self.hasAdjusted)
-	{
-		if(SYS_VER_GREAT_OR_EQUAL(@"8.0"))
-		{
+			//in iOS8, animations are compounded on top of one another
 			[self.dcImage.layer removeAllAnimations];
 		}
 		[self rotateImageView];
@@ -172,7 +160,7 @@ static BOOL enableTweak = NO;
 {
 	if (self.isSpinning)
 	{
-		CGFloat duration = [self isNumeric:SSSpeed] ? [SSSpeed floatValue] : 15;
+		CGFloat duration = [self isNumeric:SSSpeed] ? [SSSpeed floatValue] : 2.0;
 	   [UIView animateWithDuration:duration delay:0.0f options:UIViewAnimationOptionCurveLinear
             animations:^{
                 self.dcImage.transform = CGAffineTransformRotate(self.dcImage.transform, M_PI / 2);
@@ -184,19 +172,6 @@ static BOOL enableTweak = NO;
                 }
             }];
 	}
-/*
-	if ((long)self.isSpinning && [self.dcImage.layer animationForKey:@"rotationAnimation"] == nil)
-	{
-		CGFloat duration = [self isNumeric:SSSpeed] ? [SSSpeed floatValue] : 15;
-		//int rotations = 1;
-		CABasicAnimation* rotationAnimation = [CABasicAnimation animationWithKeyPath:@"transform.rotation.z"];
-	    rotationAnimation.toValue = [NSNumber numberWithFloat: M_PI * 2.0];
-	    rotationAnimation.duration = duration;
-	    rotationAnimation.cumulative = YES;
-	    rotationAnimation.repeatCount = INFINITY;
-	    [self.dcImage.layer addAnimation:rotationAnimation forKey:@"rotationAnimation"];
-	}
-*/
 }
 %end
 
@@ -252,78 +227,38 @@ static BOOL enableTweak = NO;
 		{
 			NSLog(@"Our image ivar is of the correct class.");
 			[img setDynamicFrame:[img bounds]];
-			if(SYS_VER_GREAT_OR_EQUAL(@"8.0"))
-		 	{
-		 		[img.layer removeAllAnimations];
-		 	}
-			[img rotateImageView];
 		}	
 	}
 }
 
 %end
 
-
-// "Hey, why do you have different code for iOS7 and iOS8 preferences?"
-// "Because I knew what worked for iOS7 and I knew what worked for iOS8. I needed to push out an update to fix a conflict with 'Spin'
-// and thus couldn't test in time the code to see if the changes for iOS8 would also work for iOS7. Will be sorted out in the next update"
 static void loadPrefs() 
 {
-    if(SYS_VER_GREAT_OR_EQUAL(@"8.0"))
-    {
-    	NSLog(@"Loading SpinSettings prefs for iOS8");
-	    CFPreferencesAppSynchronize(CFSTR("com.joshdoctors.spinsettings"));
+	NSLog(@"Loading SpinSettings prefs");
+    CFPreferencesAppSynchronize(CFSTR("com.joshdoctors.spinsettings"));
 
-	    enableTweak = !CFPreferencesCopyAppValue(CFSTR("enableTweak"), CFSTR("com.joshdoctors.spinsettings")) ? NO : [(id)CFPreferencesCopyAppValue(CFSTR("enableTweak"), CFSTR("com.joshdoctors.spinsettings")) boolValue];
-	    if (enableTweak) {
-	        NSLog(@"[SpinSettings] We are enabled");
-	    } else {
-	        NSLog(@"[SpinSettings] We are NOT enabled");
-	    }
-
-	    SSSpeed = (NSString*)CFPreferencesCopyAppValue(CFSTR("SSSpeed"), CFSTR("com.joshdoctors.spinsettings")) ?: @"1.0";
-	    [SSSpeed retain];
-	    NSLog(@"SSSpeed: %@",SSSpeed);
+    enableTweak = !CFPreferencesCopyAppValue(CFSTR("enableTweak"), CFSTR("com.joshdoctors.spinsettings")) ? NO : [(id)CFPreferencesCopyAppValue(CFSTR("enableTweak"), CFSTR("com.joshdoctors.spinsettings")) boolValue];
+    if (enableTweak) {
+        NSLog(@"[SpinSettings] We are enabled");
+    } else {
+        NSLog(@"[SpinSettings] We are NOT enabled");
     }
-    else
-    {
-    	NSLog(@"Loading SpinSettings prefs for iOS7");
-	    NSMutableDictionary *prefs = [[NSMutableDictionary alloc] initWithContentsOfFile:@"/var/mobile/Library/Preferences/com.joshdoctors.spinsettings.plist"];
 
-	    if (prefs)
-	    {
-	        enableTweak = ([prefs objectForKey:@"enableTweak"] ? [[prefs objectForKey:@"enableTweak"] boolValue] : enableTweak);
+    SSSpeed = (NSString*)CFPreferencesCopyAppValue(CFSTR("SSSpeed"), CFSTR("com.joshdoctors.spinsettings")) ?: @"2.0";
+    [SSSpeed retain];
+    NSLog(@"SSSpeed: %@",SSSpeed);
 
-	        if (enableTweak) {
-	        	NSLog(@"[SpinSettings] We are enabled");
-		    } else {
-		        NSLog(@"[SpinSettings] We are NOT enabled");
-		    }
-
-	        SSSpeed = ( [prefs objectForKey:@"SSSpeed"] ? [prefs objectForKey:@"SSSpeed"] : SSSpeed );
-	        [SSSpeed retain];
-	    }
-	    [prefs release];
-    }
 }
 
 %ctor
 {
-	if(SYS_VER_GREAT_OR_EQUAL(@"8.0"))
-	{
-		NSLog(@"Loading SpinSettings for iOS8");
-		CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(),
-                                    NULL,
-                                    (CFNotificationCallback)loadPrefs,
-                                    CFSTR("com.joshdoctors.spinsettings/settingschanged"),
-                                    NULL,
-                                    CFNotificationSuspensionBehaviorDeliverImmediately);
-    	loadPrefs();
-	}
-	else
-	{
-		NSLog(@"Loading SpinSettings for iOS7");
-		CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, (CFNotificationCallback)loadPrefs, CFSTR("com.joshdoctors.spinsettings/settingschanged"), NULL, CFNotificationSuspensionBehaviorCoalesce);
-	    loadPrefs();
-	}
+	NSLog(@"Loading SpinSettings");
+	CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(),
+                                NULL,
+                                (CFNotificationCallback)loadPrefs,
+                                CFSTR("com.joshdoctors.spinsettings/settingschanged"),
+                                NULL,
+                                CFNotificationSuspensionBehaviorDeliverImmediately);
+	loadPrefs();
 }
