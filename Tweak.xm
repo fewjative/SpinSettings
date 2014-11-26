@@ -147,12 +147,8 @@ static BOOL enableTweak = NO;
 
 	if (self.hasAdjusted)
 	{
-		if(SYS_VER_GREAT_OR_EQUAL(@"8.0"))
-		{
-			//in iOS8, animations are compounded on top of one another
-			[self.dcImage.layer removeAllAnimations];
-		}
-		[self rotateImageView];
+		if([[self.dcImage.layer animationKeys] count] < 1)
+			[self rotateImageView];
 	}
 }
 
@@ -167,7 +163,6 @@ static BOOL enableTweak = NO;
             }
             completion: ^(BOOL finished) {
                 if (finished) {
-                	[self.dcImage.layer removeAllAnimations];
                 	[self rotateImageView];
                 }
             }];
